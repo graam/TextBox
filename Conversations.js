@@ -8,16 +8,10 @@ import {
     View
 } from 'react-native';
 
-var Scripts = require("./Scripts.js");
+const Scripts = require("./Scripts.js");
+const Menu = require("./Menu.js");
 
 export default class Conversations extends Component {
-    constructor(props){
-        super(props);
-        this.state = {
-            cnvSrc: []
-        }
-    }
-
     componentWillMount(){
         //WARNING: If it completes before mounting then it can not update state.
         //this._listConversations();
@@ -25,13 +19,13 @@ export default class Conversations extends Component {
     componentDidMount(){
         this._listConversations();
         // Set minimum 6 seconds
-        this.timer = setInterval(() => this._listConversations(), 6000);
+        this.timer = setInterval(() => this._listConversations(), 10000);
     }
     componentDidUpdate(){
-        //
+        //this.cnvList.scrollToEnd();
     }
     componentWillUnmount(){
-        clearInterval(this.timer);
+        //clearInterval(this.timer);
     }
     
 
@@ -45,23 +39,21 @@ export default class Conversations extends Component {
         .then((json) => json.response)
         //.then((data) => _sortArrOfObjs(data,"lastMessageDate"))
         .then((sortedData) => {
-            this.setState({cnvSrc:sortedData});
+            this.props.changeState({cnvSrc:sortedData});
         })
         .catch((error) => {
-            console.error(error);
+            //TODO: Show cached list
+            console.log("Conversations46:"+error);
         })
     }
 
-    _renderHeader = () => {
-        return <Button title="End" onPress={() => this.cnvList.scrollToEnd()} />;
-    };
 
     _renderSeparator = () => {
         return (
             <View
                 style={{
                 height: 1,
-                backgroundColor: "#CED0CE",
+                backgroundColor: "#9C9691",
                 }}
             />
         )
@@ -71,7 +63,7 @@ export default class Conversations extends Component {
         let rd = obj.item;
         return (
             <TouchableHighlight onPress={() => {
-                clearInterval(this.timer);
+                //clearInterval(this.timer);
                 this.props.changeState({view:"messages",fingerprint:rd.fingerprint});
             }}>
                 <View style={rd.unreadCount?styles.item_unread:styles.item}>
@@ -95,16 +87,13 @@ export default class Conversations extends Component {
 
     render(){
         return(
-            <View>
-                <View>
-                    <Text>Header</Text>
-                </View>
+            <View style={{flex:1}}>
+                <Menu />
                 <FlatList
                     ref={(ref) => this.cnvList = ref}
-                    data={this.state.cnvSrc}
+                    data={this.props.cnvSrc}
                     extraData={this.state}
                     keyExtractor={(item,index) => index}
-                    ListHeaderComponent={this._renderHeader}
                     ItemSeparatorComponent={this._renderSeparator}
                     renderItem={this._renderItem}
                 />

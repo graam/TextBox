@@ -12,17 +12,6 @@ import {
 var Scripts = require("./Scripts.js");
 
 export default class Conversations extends Component {
-    constructor(props){
-        super(props);
-        this.state = {
-            msgSrc: []
-        }
-    }
-
-
-    componentWillMount(){
-        //this._listMessages();
-    }
     componentDidMount(){
         this._listMessages();
         this.timer = setInterval(() => this._listMessages(), 2000);
@@ -33,7 +22,6 @@ export default class Conversations extends Component {
     componentWillUnmount(){
         clearInterval(this.timer);
     }
-
 
 
     _listMessages(){
@@ -47,8 +35,7 @@ export default class Conversations extends Component {
         .then((response) => response.messages)
         .then((data) => _sortArrOfObjs(data,"dateCreated"))
         .then((sortedData) => {
-            // this.setState({msgSrc:sortedData},(prevState,props)=>this.msgList.scrollToEnd());
-            this.setState({msgSrc:sortedData},(prevState,props)=>setTimeout(() => this.msgList.scrollToEnd(), 100));
+            this.props.changeState({msgSrc:sortedData},(prevState,props)=>setTimeout(() => this.msgList.scrollToEnd(), 100));
         })
         .catch((error) => {
             console.error(error.message);
@@ -79,11 +66,11 @@ export default class Conversations extends Component {
     render(){
         return (
             <View style={{flex:1}}>
+                <View style={styles.header}><Text>HEADER</Text></View>
                 <FlatList
                     ref={(ref) => this.msgList = ref}
                     keyExtractor={(item,index) => index}
-                    extraData={this.state}
-                    data={this.state.msgSrc}
+                    data={this.props.msgSrc}
                     renderItem={(obj) => {
                         let rd = obj.item;
                         if(this.props.phoneNumber == rd.sourceAddress.substr(-10)){
@@ -187,6 +174,12 @@ const styles = StyleSheet.create({
   msg_phone_to: {
     fontSize: 9,
     textAlign: 'right',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 4,
+    backgroundColor: '#F5FCFF',
   },
   footer: {
     flexDirection: 'row',
