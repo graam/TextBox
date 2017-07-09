@@ -9,9 +9,11 @@ import {
     View
 } from 'react-native';
 
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 var Scripts = require("./Scripts.js");
 
-export default class Conversations extends Component {
+export default class Messages extends Component {
     componentDidMount(){
         this._listMessages();
         this.timer = setInterval(() => this._listMessages(), 2000);
@@ -47,7 +49,7 @@ export default class Conversations extends Component {
         fetch('https://api.zipwhip.com/message/send',{
             method:'POST',
             headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            body:'session='+this.props.sessionKey+'&contacts=ptn:/'+this.toPhoneNumber+'&body='+this.msgToSend
+            body:'session='+this.props.sessionKey+'&contacts=ptn:/'+this.props.toPhoneNumber+'&body='+this.msgToSend
         })
         .then((resp) => resp.json())
         .then((json) => json.success)
@@ -66,39 +68,50 @@ export default class Conversations extends Component {
     render(){
         return (
             <View style={{flex:1}}>
-                <View style={styles.header}><Text>HEADER</Text></View>
+                <View style={styles.header}>
+                    <View>
+                        <Icon name="arrow-back" color="white" style={{fontSize:24}} onPress={() => {
+                            this.props.changeState({view:"conversations"});
+                        }}/>
+                    </View>
+                    <View>
+                        <Text>{this.props.toFirstName} {this.props.toLastName}</Text>
+                        <Text style={styles.subtitle}>{Scripts.formatPhoneNumber(this.props.toPhoneNumber)}</Text>
+                    </View>
+                    <View></View>
+                </View>
                 <FlatList
                     ref={(ref) => this.msgList = ref}
                     keyExtractor={(item,index) => index}
                     data={this.props.msgSrc}
                     renderItem={(obj) => {
                         let rd = obj.item;
+                        this.firstName = rd.firstName;
+                        this.lastName = rd.lastName;
                         if(this.props.phoneNumber == rd.sourceAddress.substr(-10)){
                             return (
                                 <View style={styles.row}>
-                                    <Text style={{flex:1/10}} >&nbsp;</Text>
                                     <View style={styles.msg_out}>
                                         <View>
-                                        <Text style={styles.msg_phone_to}>To: {rd.destAddress} </Text>
-                                        <Text>{rd.body} </Text>
-                                        <Text style={styles.date}>{Scripts.formatDate(rd.dateCreated)} </Text>
+                                            <Text style={styles.msg_phone}>To: {rd.destAddress} </Text>
+                                            <Text>{rd.body} </Text>
+                                            <Text style={styles.date_out}>{Scripts.formatDate(rd.dateCreated)} </Text>
                                         </View>
                                     </View>
+                                    <Text style={{flex:1/10}} >&nbsp;</Text>
                                 </View>
                             )
                         } else {
-                            // Update to phone number.
-                            this.toPhoneNumber = rd.sourceAddress.substr(-10);
                             return (
                                 <View style={styles.row}>
+                                    <Text style={{flex:1/10}} >&nbsp;</Text>
                                     <View style={styles.msg_in}>
                                         <View>
-                                        <Text style={styles.msg_phone}>From: {rd.sourceAddress} </Text>
-                                        <Text>{rd.body} </Text>
-                                        <Text style={styles.date}>{Scripts.formatDate(rd.dateCreated)} </Text>
+                                            <Text style={styles.msg_phone_to}>From: {rd.sourceAddress} </Text>
+                                            <Text style={{textAlign:'right'}}>{rd.body} </Text>
+                                            <Text style={styles.date_in}>{Scripts.formatDate(rd.dateCreated)} </Text>
                                         </View>
                                     </View>
-                                    <Text style={{flex:1/10}} >&nbsp;</Text>
                                 </View>
                             )
                         }
@@ -141,18 +154,32 @@ const _sortArrOfObjs = (arrObj,criteria) => {
 }
 
 const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 4,
+        backgroundColor: '#3F9BBF',
+    },
+    subtitle:{
+        fontSize: 16,
+        color: 'white',
+    },
   row: {
     flexDirection: 'row',
     padding: 4,
     backgroundColor: '#EEEEEE',
   },
-  date: {
-    flex: 1,
-    textAlign: 'right',
+  date_out: {
     fontSize: 10,
     color: '#A6A6A6',
+    textAlign: 'left',
   },
-  msg_in: {
+  date_in: {
+    fontSize: 10,
+    color: '#A6A6A6',
+    textAlign: 'right',
+  },
+  msg_out: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-start',
@@ -160,7 +187,7 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 8,
   },
-  msg_out: {
+  msg_in: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -174,12 +201,6 @@ const styles = StyleSheet.create({
   msg_phone_to: {
     fontSize: 9,
     textAlign: 'right',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 4,
-    backgroundColor: '#F5FCFF',
   },
   footer: {
     flexDirection: 'row',

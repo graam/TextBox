@@ -7,43 +7,45 @@ import {
     View
 } from 'react-native';
 
+var Scripts = require("./Scripts.js");
+
 export default class Login extends Component {
     componentWillMount(){
         // Get session key from store and update state
-        AsyncStorage.getItem('PhoneNumber', (error, result) => {
-        if(error){
-            // error in getting session key
-            console.error(error);
-        } else if(result && result.length == 10) {
-            // we have some data.
-            let phoneNumber = result;
-            AsyncStorage.getItem('SessionKey', (error, result) => {
-                if(error){
-                    // error in getting session key
-                    console.error(error);
-                } else if(result && result.length == 46) {
-                    // we have some data.
-                    this.props.changeState({view:"conversations",phoneNumber:phoneNumber,sessionKey:result});
-                    //this._setFullName();
-                    //this._listConversations();
-                } else {
-                    // Session key invalid.
-                    // Do nothing, let it stay on login view.
-                }
-            });
-        } else {
-            // Phone number invalid.
-            // Do nothing, let it stay on login view.
-        }
+        AsyncStorage.getItem('PhoneNumber', (error, phoneNumber) => {
+            if(error){
+                // error in getting session key
+                console.error(error);
+            } else if(phoneNumber && phoneNumber.length == 10) {
+                // we have some data.
+                //let phoneNumber = result;
+                AsyncStorage.getItem('SessionKey', (error, sessionKey) => {
+                    if(error){
+                        // error in getting session key
+                        console.log(error);
+                    } else if(sessionKey && sessionKey.length == 46) {
+                        // we have some data.
+                        //let sessionKey = result;
+                        AsyncStorage.getItem('FullName', (error, fullName) => {
+                            if(error){
+                                // error in getting full name
+                                console.log(error);
+                            } else {
+                                this.props.changeState({view:"conversations",phoneNumber:phoneNumber,sessionKey:sessionKey,fullName:fullName});
+                            }
+                        });
+                    } else {
+                        // Session key invalid.
+                        // Do nothing, let it stay on login view.
+                    }
+                });
+            } else {
+                // Phone number invalid.
+                // Do nothing, let it stay on login view.
+            }
         });
     }
 
-
-    _formatPhoneNumber(s){
-        var s2 = (""+s).replace(/\D/g, '');
-        var m = s2.match(/^(\d{3})(\d{3})(\d{4})$/);
-        return (!m) ? null : "(" + m[1] + ") " + m[2] + "-" + m[3];
-    }
 
     //////////////////////////////////////////////////////////////////////
     /*  SESSION KEY                                                     */
@@ -62,15 +64,45 @@ export default class Login extends Component {
         .then((sessionKey) => {
             AsyncStorage.setItem('PhoneNumber', this.phoneNumber, (error) => {
                 if(error){
-                    console.error(error);
+                    console.log(error);
                 } else {
-                AsyncStorage.setItem('SessionKey', sessionKey, (error) => {
-                    if(error){
-                        console.error(error);
-                    } else {
-                        this.props.changeState({view:"conversations",sessionKey:sessionKey});
-                    }
-                });
+                    AsyncStorage.setItem('SessionKey', sessionKey, (error) => {
+                        if(error){
+                            console.log(error);
+                        } else {
+                            this._setFullName(this.phoneNumber,sessionKey);
+                        }
+                    });
+                }
+            });
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    /*  FULL NAME                                                       */
+    //////////////////////////////////////////////////////////////////////
+    _setFullName(phoneNumber,sessionKey) {
+        fetch('https://api.zipwhip.com/user/get',{
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'session='+sessionKey
+        })
+        .then((resp) => resp.json())
+        .then((json) => {
+            if(json.success) return json.response;
+            else throw json.errorDesc;
+        })
+        .then((response) => response.user)
+        .then((user) => user.fullName)
+        .then((fullName) => {
+            AsyncStorage.setItem('FullName', fullName, (error) => {
+                if(error){
+                    console.log(error);
+                } else {
+                    this.props.changeState({view:"conversations",phoneNumber:phoneNumber,sessionKey:sessionKey,fullName:fullName});
                 }
             });
         })
@@ -78,6 +110,7 @@ export default class Login extends Component {
             console.error(error);
         });
     }
+    
     
     render() {
         return (
@@ -87,7 +120,7 @@ export default class Login extends Component {
                     keyboardType='phone-pad'
                     returnKeyType='next'
                     placeholder='Phone number'
-                    value = {this._formatPhoneNumber(this.phoneNumber)}
+                    value = {Scripts.formatPhoneNumber(this.phoneNumber)}
                     onChangeText={(text) => this.phoneNumber = text}
                     onSubmitEditing={() => this.refs['2'].focus()}
                 />

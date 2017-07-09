@@ -1,15 +1,19 @@
 import React, { Component } from 'react';
 import {
+    AsyncStorage,
     Button,
     FlatList,
     StyleSheet,
     Text,
     TouchableHighlight,
+    ToolbarAndroid,
     View
 } from 'react-native';
 
-const Scripts = require("./Scripts.js");
-const Menu = require("./Menu.js");
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import Scripts from "./Scripts.js";
+import MenuAndroid from "./MenuAndroid.js";
 
 export default class Conversations extends Component {
     componentWillMount(){
@@ -25,9 +29,23 @@ export default class Conversations extends Component {
         //this.cnvList.scrollToEnd();
     }
     componentWillUnmount(){
-        //clearInterval(this.timer);
+        clearInterval(this.timer);
     }
     
+    _goToLogin(){
+        // Reset session key.
+        AsyncStorage.setItem('SessionKey', "", (error) => {
+            if(error){
+                console.error(error);
+            } else {
+                this.props.changeState({view:"login"});
+            }
+        });
+    }
+
+    _goToNewMessage(){
+        this.props.changeState({view:'compose'})
+    }
 
     _listConversations(){
         fetch('https://api.zipwhip.com/conversation/list',{
@@ -43,7 +61,7 @@ export default class Conversations extends Component {
         })
         .catch((error) => {
             //TODO: Show cached list
-            console.log("Conversations46:"+error);
+            console.log("Conversations64:"+error);
         })
     }
 
@@ -64,7 +82,7 @@ export default class Conversations extends Component {
         return (
             <TouchableHighlight onPress={() => {
                 //clearInterval(this.timer);
-                this.props.changeState({view:"messages",fingerprint:rd.fingerprint});
+                this.props.changeState({view:"messages",fingerprint:rd.fingerprint,toFirstName:rd.lastContactFirstName||"Unknown",toLastName:rd.lastContactLastName,toPhoneNumber:rd.lastContactMobileNumber});
             }}>
                 <View style={rd.unreadCount?styles.item_unread:styles.item}>
                     <View style={styles.row}>
@@ -88,7 +106,14 @@ export default class Conversations extends Component {
     render(){
         return(
             <View style={{flex:1}}>
-                <Menu />
+                <View style={styles.header}>
+                    <View></View>
+                    <View>
+                        <Text>{this.props.fullName}</Text>
+                        <Text style={styles.subtitle}>{Scripts.formatPhoneNumber(this.props.phoneNumber)}</Text>
+                    </View>
+                    <MenuAndroid actions={['New Text','Logout']} onPress={this.onPopupEvent} />
+                </View>
                 <FlatList
                     ref={(ref) => this.cnvList = ref}
                     data={this.props.cnvSrc}
@@ -100,9 +125,25 @@ export default class Conversations extends Component {
             </View>
         )
     }
+
+    onPopupEvent = (eventName, index) => {
+        if (eventName !== 'itemSelected') return;
+        if (index === 0) this._goToNewMessage();
+        else this._goToLogin();
+    }
 }
 
 const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 4,
+        backgroundColor: '#3F9BBF',
+    },
+    subtitle:{
+        fontSize: 16,
+        color: 'white',
+    },
     item: {
         padding:5,
         backgroundColor: '#EEEEEE',
