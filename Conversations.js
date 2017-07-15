@@ -16,12 +16,8 @@ import Scripts from "./Scripts.js";
 import MenuAndroid from "./MenuAndroid.js";
 
 export default class Conversations extends Component {
-    componentWillMount(){
-        //WARNING: If it completes before mounting then it can not update state.
-        //this._listConversations();
-    }
     componentDidMount(){
-        this._listConversations();
+        this._loadConversations();
         // Set minimum 6 seconds
         this.timer = setInterval(() => this._listConversations(), 10000);
     }
@@ -43,8 +39,18 @@ export default class Conversations extends Component {
         });
     }
 
-    _goToNewMessage(){
+    _goToComposeMessage(){
         this.props.changeState({view:'compose'})
+    }
+
+    _loadConversations(){
+        AsyncStorage.getItem('CnvSrc', (error, cnvSrc) => {
+            if(error){
+                console.log(error);
+            } else {
+                this.props.changeState({cnvSrc:JSON.parse(cnvSrc)});
+            }
+        });
     }
 
     _listConversations(){
@@ -57,11 +63,17 @@ export default class Conversations extends Component {
         .then((json) => json.response)
         //.then((data) => _sortArrOfObjs(data,"lastMessageDate"))
         .then((sortedData) => {
-            this.props.changeState({cnvSrc:sortedData});
+            AsyncStorage.setItem('CnvSrc', JSON.stringify(sortedData), (error) => {
+                if(error){
+                    console.log(error);
+                } else {
+                    this.props.changeState({cnvSrc:sortedData});
+                }
+            });
         })
         .catch((error) => {
-            //TODO: Show cached list
-            console.log("Conversations64:"+error);
+            //Show cached list
+            this._loadConversations();
         })
     }
 
@@ -128,7 +140,7 @@ export default class Conversations extends Component {
 
     onPopupEvent = (eventName, index) => {
         if (eventName !== 'itemSelected') return;
-        if (index === 0) this._goToNewMessage();
+        if (index === 0) this._goToComposeMessage();
         else this._goToLogin();
     }
 }

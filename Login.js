@@ -10,7 +10,7 @@ import {
 var Scripts = require("./Scripts.js");
 
 export default class Login extends Component {
-    componentWillMount(){
+    componentDidMount(){
         // Get session key from store and update state
         AsyncStorage.getItem('PhoneNumber', (error, phoneNumber) => {
             if(error){

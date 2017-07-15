@@ -27,13 +27,15 @@ export default class Compose extends Component {
     }
 
     _handleResults(results) {
-        this.setState({ results });
+        this.setState({ results:results });
     }
 
     _addNumber(str){
         if(this.state.toNumbers.indexOf(str) < 0){
-            this.state.toNumbers.push(str);
-            this.setState({});
+            this.setState((prevState,props) => {
+                prevState.toNumbers.push(str);
+                return {toNumbers:prevState.toNumbers}
+            });
         }
     }
 
@@ -56,7 +58,6 @@ export default class Compose extends Component {
     }
 
 
-
     render(){
         return (
             <View style={{flex:1}}>
@@ -77,7 +78,13 @@ export default class Compose extends Component {
                         {
                             this.state.toNumbers.map((result, i) => {
                                 return (
-                                    <Text key={i}>{result}</Text>
+                                    <Text key={i}>{result} <Icon name="cancel" onPress={() => {
+                                            this.setState((prevState,props) => {
+                                                prevState.toNumbers.splice(i,1);
+                                                return {toNumbers:prevState.toNumbers};
+                                            });
+                                        }} />
+                                    </Text>
                                 );
                             })
                         }
